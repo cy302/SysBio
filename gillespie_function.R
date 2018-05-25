@@ -39,7 +39,7 @@ gillespie <- function(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2){
         stick_frac <- c(0, x1_birth, x1_death, x2_birth, x2_death)
         stick <- cumsum(stick_frac)/Tot_rate
         u_event <- runif(1)
-        which_event <- tail(which(u_event>stick),1)
+        which_event <- tail(which(u_event > stick), 1) #Choose the falling region
         
         if (which_event == 1){ #x1_birth
           x1 <- x1 + 1
@@ -58,9 +58,8 @@ gillespie <- function(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2){
         x1_storage[i] <- x1
         x2_storage[i] <- x2
     }
-    return(list("x1_storage" = x1_storage,
-                "x2_storage" = x2_storage,
-                "time_keeper" = time_keeper))
+    return(list("x1" = x1_storage,"x2" = x2_storage,
+                "time" = time_keeper))
 }
 results <- gillespie(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2)
 par(mfrow=c(1,1),mar=c(4,3,1,1))
