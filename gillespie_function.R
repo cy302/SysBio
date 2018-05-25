@@ -4,7 +4,7 @@
 x1 <- 10
 x2 <- 1000
 iteration <- 1e6
-K <- 500
+
 beta1 <- 1
 beta2 <- 1
 lamda1 <- 100
@@ -22,7 +22,7 @@ gillespie <- function(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2){
 
     #calculate rate of change in x1 and x2, both birth and death
     for (i in 2:iteration){
-        x1_birth <- lamda1*(K/(K+x2)) 
+        x1_birth <- lamda1 
         x1_death <- x1 * beta1
       
         x2_death <- x2 * beta2
