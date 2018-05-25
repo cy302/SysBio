@@ -20,8 +20,8 @@ gillespie <- function(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2){
     x1_death_rate <- x1 * beta1
     
     #total rate of change of x_1 and x_2
-    Tot_rate1 <- sum(x1_birth_rate,x1_death_rate)
-    Tot_rate2 <- sum(x2_birth_rate,x2_death_rate)
+    Tot_rate <- sum(x1_birth_rate,x1_death_rate, x2_birth_rate,x2_death_rate)
+    
     
     #stores xi_storage stores number of molecules at time time_keeperi
     time_keeper1 <- time_keeper2 <- c()
