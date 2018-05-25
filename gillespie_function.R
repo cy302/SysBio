@@ -58,9 +58,16 @@ gillespie <- function(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2){
         x1_storage[i] <- x1
         x2_storage[i] <- x2
     }
-    return(list("x1" = x1_storage,"x2" = x2_storage,
-                "time" = time_keeper))
+    return(list("parm" = c(K=K, beta1=beta1, beta2=beta2, lamda1=lamda1, lamda2=lamda2), 
+                "x1" = x1_storage,"x2" = x2_storage, "time" = time_keeper))
 }
+
+
+
+noise_calulator <- function(parm){
+    parm["K"]
+}
+
 results <- gillespie(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2)
 par(mfrow=c(1,1),mar=c(4,3,1,1))
 plot(results$time_keeper, results$x2_storage,type="l")
