@@ -35,15 +35,22 @@ gillespie <- function(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2){
         #choose which event takes place
         #based on which event takes place, update x1 or x2 accordingly
         u_event <- runif(1,0,1)
-        if (u_event < x1_birth/Tot_rate){ #x1_birth
+        
+        stick_frac <- c(0, x1_birth, x1_death, x2_birth, x2_death)
+        stick <- cumsum(stick_frac)/Tot_rate
+        u_event <- runif(1)
+        which_event <- tail(which(u_event>stick),1)
+        
+        if (which_event == 1){ #x1_birth
           x1 <- x1 + 1
-        } else if ((x1_birth/Tot_rate < u_event) &
-                   (u_event < (x1_birth+x1_death)/Tot_rate)) { #x1_death
+        } 
+        if (which_event == 2) { #x1_death
           x1 <- x1 - 1
-        } else if (((x1_birth+x1_death)/Tot_rate < u_event) &
-                  (u_event < (x1_birth+x1_death+x2_birth)/Tot_rate)) { #x2_birth
+        }
+        if (which_event == 3) { #x2_birth
           x2 <- x2 + 1
-        } else if (u_event > (x1_birth+x1_death+x2_birth)/Tot_rate) { #x2_death
+        }
+        if (which_event == 4) { #x2_death
           x2 <- x2 - 1
         }
         
@@ -51,7 +58,8 @@ gillespie <- function(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2){
         x1_storage[i] <- x1
         x2_storage[i] <- x2
     }
-    return(list("x1_storage" = x1_storage,"x2_storage" = x2_storage,
+    return(list("x1_storage" = x1_storage,
+                "x2_storage" = x2_storage,
                 "time_keeper" = time_keeper))
 }
 results <- gillespie(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2)
