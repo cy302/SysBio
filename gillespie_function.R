@@ -25,13 +25,13 @@ createParameters <- function(){
     parameter_matrix[row:(row+9),"beta2"] <- beta2[counter]
     counter <- counter + 1
   }
-  return(parameter_matrix)
+  return(as.data.frame(parameter_matrix))
 }
 
 parameters <- createParameters()
 
 #auto regulation, suppose reduction of protein could lead to increase of mRNA production rate
-gillespie <- function(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2){
+gillespie <- function(x1, x2, iteration, beta1, beta2, lamda1, lamda2){
     
     time_keeper <- c()
     x1_storage <- x2_storage <-c()
@@ -78,7 +78,7 @@ gillespie <- function(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2){
         x1_storage[i] <- x1
         x2_storage[i] <- x2
     }
-    return(list("parm" = c(K=K, beta1=beta1, beta2=beta2, lamda1=lamda1, lamda2=lamda2), 
+    return(list("parm" = c(beta1=beta1, beta2=beta2, lamda1=lamda1, lamda2=lamda2), 
                 "x1" = x1_storage,"x2" = x2_storage, "time" = time_keeper))
 }
 
@@ -91,7 +91,20 @@ noise_calculator <- function(dat1, dat2, parm){
     in_noise <- 1/mean(dat2)
 }
 
-results <- gillespie(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2)
+results <- gillespie(x1, x2, iteration, beta1, parameters$beta1, parameters$lambda1, parameters$lambda2)
+
+
+
+
+
+
+
+
+
+
+
+
+
 par(mfrow=c(1,1),mar=c(4,3,1,1))
 plot(results$time_keeper[900000:1000000], results$x2_storage[900000:1000000],type="l")
 par(new=FALSE)
