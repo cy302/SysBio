@@ -1,6 +1,7 @@
 #x1 is mRNA which has low amount, 10
 #x2 is protein which is abundant, 1000
 ##### Initialisation #####
+library(parallel)
 x1 <- 10
 x2 <- 1000
 iteration <- 1e6
@@ -31,7 +32,7 @@ createParameters <- function(){
 parameters <- createParameters()
 
 #auto regulation, suppose reduction of protein could lead to increase of mRNA production rate
-gillespie <- function(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2){
+gillespie <- function(x1, x2, iteration, beta1, beta2, lamda1, lamda2){
     
     time_keeper <- c()
     x1_storage <- x2_storage <-c()
@@ -78,11 +79,23 @@ gillespie <- function(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2){
         x1_storage[i] <- x1
         x2_storage[i] <- x2
     }
-    return(list("parm" = c(K=K, beta1=beta1, beta2=beta2, lamda1=lamda1, lamda2=lamda2), 
+    return(list("parm" = c(beta1=beta1, beta2=beta2, lamda1=lamda1, lamda2=lamda2), 
                 "x1" = x1_storage,"x2" = x2_storage, "time" = time_keeper))
 }
 
+runSimulation <- function(parameters){
+  cl <- makeCluster( 4 )
+  clusterExport(cl, c("x1", "x2", "iteration", "gillespie", "parameters"))
+  rows <- 1:100
+  
+  results <- parLapply(cl = cl,  X = rows, fun =  function(X){
+    gillespie(x1, x2, iteration, parameters[X,1],parameters[X,2],parameters[X,3],parameters[X,4])
+  })
+  stopCluster(cl = cl)
+  return(results)
+}
 
+simulation_results <- runSimulation(parameters)
 
 noise_calulator <- function(parm){
     parm["K"]
