@@ -6,9 +6,29 @@ x2 <- 1000
 iteration <- 1e6
 
 beta1 <- 1
-beta2 <- 1
+beta2 <- 100
 lamda1 <- 100
 lamda2 <- 100
+
+createParameters <- function(){
+  lambda1 <- seq(10,100,by=10)
+  lambda2 <- 110 - lambda1 
+  beta1 <- seq(10,100,by=10)
+  beta2 <- 110 - beta1
+  parameter_matrix <- matrix(nrow = 100, ncol = 4,
+                     dimnames = list(1:100, c("lambda1", "lambda2", "beta1", "beta2")))
+  parameter_matrix[,"lambda1"] <- lambda1
+  parameter_matrix[,"lambda2"] <- lambda2
+  counter <- 1
+  for (row in seq(1,nrow(parameter_matrix), by =10)){
+    parameter_matrix[row:(row+9),"beta1"] <- beta1[counter]
+    parameter_matrix[row:(row+9),"beta2"] <- beta2[counter]
+    counter <- counter + 1
+  }
+  return(parameter_matrix)
+}
+
+parameters <- createParameters()
 
 #auto regulation, suppose reduction of protein could lead to increase of mRNA production rate
 gillespie <- function(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2){
@@ -56,8 +76,9 @@ gillespie <- function(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2){
 }
 results <- gillespie(x1, x2, iteration, K, beta1, beta2, lamda1, lamda2)
 par(mfrow=c(1,1),mar=c(4,3,1,1))
-plot(results$time_keeper, results$x2_storage,type="l")
+plot(results$time_keeper[900000:1000000], results$x2_storage[900000:1000000],type="l")
 par(new=FALSE)
-plot(results$time_keeper, results$x1_storage,type="l", col = "red")
+plot(results$time_keeper[900000:1000000], results$x1_storage[900000:1000000],type="l", col = "red")
 
+##start with small beta1 and large beta2
 
