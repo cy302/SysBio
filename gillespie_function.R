@@ -95,19 +95,16 @@ runSimulation <- function(parameters){
   return(results)
 }
 
-<<<<<<< HEAD
+
 simulation_results <- runSimulation(parameters)
 
-noise_calulator <- function(parm){
-    parm["K"]
-=======
+
 noise_calculator <- function(dat1, dat2, parm){
     tau1 <- 1/parm["beta1"]
     tau2 <- 1/parm["beta2"]
     mRNA_noise <- 1/mean(dat1)
     ex_noise <- mRNA_noise + tau1/(tau1+tau2)
     in_noise <- 1/mean(dat2)
->>>>>>> 90d6c701e5998d9ad87bc4e67c00f783f7c7c3bb
 }
 
 results <- gillespie(x1, x2, iteration, beta1, parameters$beta1, parameters$lambda1, parameters$lambda2)
