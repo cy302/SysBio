@@ -47,7 +47,7 @@ gillespie <- function(x1, x2, iteration, beta1, beta2, lamda1, lamda2, check_int
     # lamda1 <- 100
     # lamda2 <- 1000
     # check_interval <- 10000
-    # 
+    
     time_keeper[1] <- 0
     x1_storage[1] <- x1
     x2_storage[1] <- x2
@@ -70,60 +70,54 @@ gillespie <- function(x1, x2, iteration, beta1, beta2, lamda1, lamda2, check_int
         Tot_rate <- sum(x1_birth, x1_death, x2_birth, x2_death)
         time_keeper[i] <- rexp(1,Tot_rate) + time_keeper[i-1]
         
-        #choose which event takes place
-        #based on which event takes place, update x1 or x2 accordingly
+        #Choose a event
         u_event <- runif(1,0,1)
-        
         stick_frac <- c(0, x1_birth, x1_death, x2_birth, x2_death)
         stick <- cumsum(stick_frac)/Tot_rate
         u_event <- runif(1)
         which_event <- tail(which(u_event > stick), 1) #Choose the falling region
         
-        if (which_event == 1){ #x1_birth
-            x1 <- x1 + 1
-        } 
-        if (which_event == 2) { #x1_death
-            x1 <- x1 - 1
-        }
-        if (which_event == 3) { #x2_birth
-            x2 <- x2 + 1
-        }
-        if (which_event == 4) { #x2_death
-            x2 <- x2 - 1
+        #Execute an event
+        if (which_event == 1)x1 <- x1 + 1  #x1_birth
+        if (which_event == 2)x1 <- x1 - 1  #x1_death
+        if (which_event == 3)x2 <- x2 + 1  #x2_birth
+        if (which_event == 4)x2 <- x2 - 1  #x2_death
+        
+        #Check stationery state
+        if (i %% check_interval == 0){
+            check_range <- (i-check_interval+1):i
+            last_x1 <- x1_storage[check_range]
+            last_x2 <- x2_storage[check_range]
+            epoch_test_1 <- c(epoch_test_1, abs((lamda1/mean(last_x1)-beta1)/beta1))
+            epoch_test_2 <- c(epoch_test_2, abs(mean(last_x1)/mean(last_x2)*lamda2-beta2)/beta2)
+            R_plus_1 <- mean(r_plus_1[check_range])
+            R_plus_2 <- mean(r_plus_2[check_range])
+            R_minus_1 <- mean(r_minus_1[check_range])
+            R_minus_2 <- mean(r_minus_2[check_range])
+            indi <- (all.equal(R_plus_1, R_minus_1, tolerance=1e-3)==TRUE)&&
+                (all.equal(R_plus_2, R_minus_2, tolerance=1e-3)==TRUE)
         }
         
-        #store new x1 and x2 values
+        #Store values
         x1_storage[i] <- x1
         x2_storage[i] <- x2
-        
-        # store new postive and negative fluxes for x1 and x2
         r_plus_1[i] <- x1_birth
         r_minus_1[i] <- x1_death
         r_plus_2[i] <- x2_birth
         r_minus_2[i] <- x2_death
-        if (i %% check_interval == 0){
-            last_x1 <- tail(x1_storage, check_interval)
-            last_x2 <- tail(x2_storage, check_interval)
-            epoch_test_1 <- c(epoch_test_1, abs((lamda1/mean(last_x1)-beta1)/beta1))
-            epoch_test_2 <- c(epoch_test_2, abs(mean(last_x1)/mean(last_x2)*lamda2-beta2)/beta2)
-            R_plus_1 <- mean(tail(r_plus_1, check_interval))
-            R_plus_2 <- mean(tail(r_plus_2, check_interval))
-            R_minus_1 <- mean(tail(r_minus_1, check_interval))
-            R_minus_2 <- mean(tail(r_minus_2, check_interval))
-            indi <- (all.equal(R_plus_1, R_minus_1, tolerance=1e-3)==TRUE)&&
-                (all.equal(R_plus_2, R_minus_2, tolerance=1e-3)==TRUE)
-        }
+        
         if (indi){
             break
         }
     }
     message("The random walk has reached stationarity at iteration: ", i)
     
-    result <- data.frame(time = time_keeper, x1 = x1_storage, x2 = x2_storage,
-                         R_plus_x1 = r_plus_1, R_minus_x1 = r_minus_1,
-                         R_plus_x2 = r_plus_2, R_minus_x2 = r_minus_2)
+    #Output result
+    result <- cbind(time = time_keeper, x1 = x1_storage, x2 = x2_storage,
+                    R_plus_x1 = r_plus_1, R_minus_x1 = r_minus_1,
+                    R_plus_x2 = r_plus_2, R_minus_x2 = r_minus_2)
     result <- head(result, i)
-    epochs <- data.frame(epoch_test_1, epoch_test_2)
+    epochs <- cbind(epoch_test_1, epoch_test_2)
     names(epochs) <- c("x1", "x2")
     return(list("parm" = c(beta1=beta1, beta2=beta2, lamda1=lamda1, lamda2=lamda2), 
                 result = result, "epochs" = epochs, 
