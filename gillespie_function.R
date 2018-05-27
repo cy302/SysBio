@@ -96,13 +96,13 @@ gillespie <- function(x1, x2, iteration, beta1, beta2, lamda1, lamda2){
         r_minus_2[i] <- x2_death
         if (i %% epoch_size == 0){
           mult <- i %/% epoch_size
-          epoch_test_1 <- c(epoch_test_1, abs((lamda1/mean(x1_storage[((mult-1)*epoch_size+1):(mult*epoch_size)]))-beta1)/beta1)
-          epoch_test_2 <- c(epoch_test_2, abs(mean(x1_storage[((mult-1)*epoch_size+1):(mult*epoch_size)])/
-            mean(x2_storage[((mult-1)*epoch_size+1):(mult*epoch_size)])*lamda2-beta2)/beta2)
-          R_plus_1 <- mean(r_plus_1[((mult-1)*epoch_size+1):(mult*epoch_size)])
-          R_plus_2 <- mean(r_plus_2[((mult-1)*epoch_size+1):(mult*epoch_size)])
-          R_minus_1 <- mean(r_minus_1[((mult-1)*epoch_size+1):(mult*epoch_size)])
-          R_minus_2 <- mean(r_minus_2[((mult-1)*epoch_size+1):(mult*epoch_size)])
+          epoch_test_1 <- c(epoch_test_1, abs((lamda1/mean(tail(x1_storage, epoch_size)))-beta1)/beta1)
+          epoch_test_2 <- c(epoch_test_2, abs(mean(tail(x1_storage, epoch_size))/
+            mean(tail(x2_storage, epoch_size))*lamda2-beta2)/beta2)
+          R_plus_1 <- mean(tail(r_plus_1, epoch_size))
+          R_plus_2 <- mean(tail(r_plus_2, epoch_size))
+          R_minus_1 <- mean(tail(r_minus_1, epoch_size))
+          R_minus_2 <- mean(tail(r_minus_2, epoch_size))
           indi <- (all.equal(R_plus_1, R_minus_1)==TRUE)&&(all.equal(R_plus_2, R_minus_2)==TRUE)
         }
         if (indi){
@@ -111,13 +111,13 @@ gillespie <- function(x1, x2, iteration, beta1, beta2, lamda1, lamda2){
     }
     message("The random walk has reached stationarity at iteration: ", i)
     
-    x1_storage <- x1_storage[1:i]
-    x2_storage <- x2_storage[1:i]
-    time_keeper <- time_keeper[1:i]
-    r_plus_1 <- r_plus_1[1:i]
-    r_minus_1 <- r_minus_1[1:i]
-    r_plus_2 <- r_plus_2[1:i]
-    r_minus_2 <- r_minus_2[1:i]
+    x1_storage <- head(x1_storage, i)
+    x2_storage <- head(x2_storage, i)
+    time_keeper <- head(time_keeper, i)
+    r_plus_1 <- head(r_plus_1, i)
+    r_minus_1 <- head(r_minus_1, i)
+    r_plus_2 <- head(r_plus_2, i)
+    r_minus_2 <- head(r_minus_2, i)
 
     flux <- data.frame(cbind(r_plus_1, r_minus_1, r_plus_2, r_minus_2))
     names(flux) <- c("R_plus_x1", "R_minus_x1", "R_plus_x2", "R_minus_x2")
@@ -127,7 +127,8 @@ gillespie <- function(x1, x2, iteration, beta1, beta2, lamda1, lamda2){
     
     return(list("parm" = c(beta1=beta1, beta2=beta2, lamda1=lamda1, lamda2=lamda2), 
                 "iterations" = i, "x1" = x1_storage,"x2" = x2_storage, 
-                "time" = time_keeper, "flux" = flux, "epochs" = epcohs))
+                "time" = time_keeper, "flux" = flux, "epochs" = epcohs, 
+                "epoch_size" = epoch_size))
 }
 
 runSimulation <- function(parameters){
@@ -150,13 +151,14 @@ check_simulation <- function(simulation_results){
   check_stationary <- rep(0, 100)
   for (i in 1:100){
     result <- simulation_results[[i]]
+    epoch_size = result$epoch_size
     relative_error_1[i] <- tail(result$epochs$x1, n=1)
     relative_error_2[i] <- tail(result$epochs$x2, n=1)
-    r_plus_x1 <- mean(result$flux$R_plus_x1)
-    r_minus_x1 <- mean(result$flux$R_minus_x1)
-    r_plus_x2 <- mean(result$flux$R_plus_x2)
-    r_minus_x2 <- mean(result$flux$R_minus_x2)
-    if ((all.equal(r_plus_x1, r_minus_x1)==TRUE) && all.equal(r_plus_x2, r_minus_x2)==TRUE){
+    r_plus_x1 <- mean(tail(result$flux$R_plus_x1), epoch_size)
+    r_minus_x1 <- mean(tail(result$flux$R_minus_x1), epoch_size)
+    r_plus_x2 <- mean(tail(result$flux$R_plus_x2), epoch_size)
+    r_minus_x2 <- mean(tail(result$flux$R_minus_x2), epoch_size)
+    if (abs(r_plus_x1-r_minus_x1) < 1e-3 && abs(r_plus_x2-r_minus_x2) < 1e-3){
       check_stationary[i] <- TRUE
     }
   }
