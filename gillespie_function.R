@@ -49,7 +49,8 @@ gillespie <- function(x1, x2, iteration, beta1, beta2, lamda1, lamda2){
     r_minus_2[1] <- x1 * lamda2
     
     epoch_size <- round(iteration/10)
-    epoch_test_1 <- epoch_test_2 <- rep(0, 10)
+    epoch_test_1 <- epoch_test_2 <- c()
+    indi <- FALSE
 
     #calculate rate of change in x1 and x2, both birth and death
     for (i in 2:iteration){
@@ -94,19 +95,39 @@ gillespie <- function(x1, x2, iteration, beta1, beta2, lamda1, lamda2){
         r_plus_2[i] <- x2_birth
         r_minus_2[i] <- x2_death
         if (i %% epoch_size == 0){
-          mult <- i%/% epoch_size
-          epoch_test_1[i] <- abs((lamda1/mean(x1_storage[((mult-1)*epoch_size+1):(mult*epoch_size)]))-beta1)/beta1
-          epoch_test_2[i] <- abs(mean(x1_storage[((mult-1)*epoch_size+1):(mult*epoch_size)])/
-            mean(x2_storage[((mult-1)*epoch_size+1):(mult*epoch_size)])*lamda2-beta2)/beta2
+          mult <- i %/% epoch_size
+          epoch_test_1 <- c(epoch_test_1, abs((lamda1/mean(x1_storage[((mult-1)*epoch_size+1):(mult*epoch_size)]))-beta1)/beta1)
+          epoch_test_2 <- c(epoch_test_2, abs(mean(x1_storage[((mult-1)*epoch_size+1):(mult*epoch_size)])/
+            mean(x2_storage[((mult-1)*epoch_size+1):(mult*epoch_size)])*lamda2-beta2)/beta2)
+          R_plus_1 <- mean(r_plus_1[((mult-1)*epoch_size+1):(mult*epoch_size)])
+          R_plus_2 <- mean(r_plus_2[((mult-1)*epoch_size+1):(mult*epoch_size)])
+          R_minus_1 <- mean(r_minus_1[((mult-1)*epoch_size+1):(mult*epoch_size)])
+          R_minus_2 <- mean(r_minus_2[((mult-1)*epoch_size+1):(mult*epoch_size)])
+          indi <- (all.equal(R_plus_1, R_minus_1)==TRUE)&&(all.equal(R_plus_2, R_minus_2)==TRUE)
+        }
+        if (indi){
+          break
         }
     }
+    message("The random walk has reached stationarity at iteration: ", i)
+    
+    x1_storage <- x1_storage[1:i]
+    x2_storage <- x2_storage[1:i]
+    time_keeper <- time_keeper[1:i]
+    r_plus_1 <- r_plus_1[1:i]
+    r_minus_1 <- r_minus_1[1:i]
+    r_plus_2 <- r_plus_2[1:i]
+    r_minus_2 <- r_minus_2[1:i]
+
     flux <- data.frame(cbind(r_plus_1, r_minus_1, r_plus_2, r_minus_2))
     names(flux) <- c("R_plus_x1", "R_minus_x1", "R_plus_x2", "R_minus_x2")
     epochs <- data.frame(cbind(epoch_test_1, epoch_test_2))
     names(epochs) <- c("x1", "x2")
+    
+    
     return(list("parm" = c(beta1=beta1, beta2=beta2, lamda1=lamda1, lamda2=lamda2), 
-                "x1" = x1_storage,"x2" = x2_storage, "time" = time_keeper, "flux" = flux,
-                "epochs" = epcohs))
+                "iterations" = i, "x1" = x1_storage,"x2" = x2_storage, 
+                "time" = time_keeper, "flux" = flux, "epochs" = epcohs))
 }
 
 runSimulation <- function(parameters){
@@ -124,14 +145,13 @@ runSimulation <- function(parameters){
 
 simulation_results <- runSimulation(parameters)
 
-check_simulation <- function(parameters){
-  results <- runSimulation(parameters)
+check_simulation <- function(simulation_results){
   relative_error_1 <- relative_error_2 <- rep(0, 100)
   check_stationary <- rep(0, 100)
   for (i in 1:100){
-    result <- results[[i]]
-    relative_error_1[i] <- result$epochs$x1[10]
-    relative_error_2[i] <- result$epochs$x2[10]
+    result <- simulation_results[[i]]
+    relative_error_1[i] <- tail(result$epochs$x1, n=1)
+    relative_error_2[i] <- tail(result$epochs$x2, n=1)
     r_plus_x1 <- mean(result$flux$R_plus_x1)
     r_minus_x1 <- mean(result$flux$R_minus_x1)
     r_plus_x2 <- mean(result$flux$R_plus_x2)
@@ -150,18 +170,17 @@ check_simulation <- function(parameters){
     cat(print("All simulations have ran long enough to describe stationarity"))
   }
   else{
-    message("Simulations that have not ran long enough to decribe stationarity: ", 
+    message("Simulations that have not ran long enough to describe stationarity: ", 
             which(check_stationary==0))
   }
 }
 
 
-check_accuracy <- function(parameters){
-  results <- runSimulation(parameters)
+check_accuracy <- function(simulation_results){
   eta11 <- eta12 <- eta22 <- rep(0, 100)
   eta11_analytic <- eta12_analytic <- eta22_analytic <- rep(0, 100)
   for (i in 1:100){
-    result <- results[[i]]
+    result <- simulation_results[[i]]
     x1 <- result$x1
     x2 <- result$x2
     tau1 <- 1/result$parm["beta1"]
@@ -219,4 +238,3 @@ par(new=FALSE)
 plot(results$time_keeper[900000:1000000], results$x1_storage[900000:1000000],type="l", col = "red")
 
 ##start with small beta1 and large beta2
-
