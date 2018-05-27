@@ -34,8 +34,14 @@ parameters <- createParameters()
 #auto regulation, suppose reduction of protein could lead to increase of mRNA production rate
 gillespie <- function(x1, x2, iteration, beta1, beta2, lamda1, lamda2){
     
-    time_keeper <- c()
-    x1_storage <- x2_storage <-c()
+      
+    
+    
+    time_keeper <- x1_storage <- x2_storage <- rep(0, iteration)
+    flux <- data.frame("x1_birth" = rep(0, iteration),
+                       "x1_death" = rep(0, iteration),
+                       "x2_birth" = rep(0, iteration),
+                       "x2_death" = rep(0, iteration))
     
     time_keeper[1] <- 0
     x1_storage[1] <- x1
@@ -64,15 +70,19 @@ gillespie <- function(x1, x2, iteration, beta1, beta2, lamda1, lamda2){
         
         if (which_event == 1){ #x1_birth
           x1 <- x1 + 1
+          flux$x1_birth[i] <- 1
         } 
         if (which_event == 2) { #x1_death
           x1 <- x1 - 1
+          flux$x1_death[i] <- 1
         }
         if (which_event == 3) { #x2_birth
           x2 <- x2 + 1
+          flux$x2_birth[i] <- 1
         }
         if (which_event == 4) { #x2_death
           x2 <- x2 - 1
+          flux$x2_death[i] <- 1
         }
         
         #store new x1 and x2 values
@@ -80,7 +90,7 @@ gillespie <- function(x1, x2, iteration, beta1, beta2, lamda1, lamda2){
         x2_storage[i] <- x2
     }
     return(list("parm" = c(beta1=beta1, beta2=beta2, lamda1=lamda1, lamda2=lamda2), 
-                "x1" = x1_storage,"x2" = x2_storage, "time" = time_keeper))
+                "x1" = x1_storage,"x2" = x2_storage, "time" = time_keeper, "flux" = flux))
 }
 
 runSimulation <- function(parameters){
@@ -105,10 +115,13 @@ noise_calculator <- function(dat1, dat2, parm){
     mRNA_noise <- 1/mean(dat1)
     ex_noise <- mRNA_noise + tau1/(tau1+tau2)
     in_noise <- 1/mean(dat2)
+    return(c("in_noise" = in_noise, "ex_noise" = ex_noise))
 }
 
 results <- gillespie(x1, x2, iteration, beta1, parameters$beta1, parameters$lambda1, parameters$lambda2)
-
+calculateChange <- function(x){
+  
+} 
 
 
 
