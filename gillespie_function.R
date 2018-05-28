@@ -4,9 +4,13 @@
 library(parallel)
 set.seed(2018)
 
+#initial x1 and x2
 x1 <- 10
 x2 <- 1000
+
+#maximal number of steps
 iteration <- 1e6
+
 
 beta1 <- 1
 beta2 <- 100
@@ -18,6 +22,7 @@ lamda2 <- 100
 # beta1 <- seq(1,20,by=1)
 # beta2 <- seq(2,30,by=2)
 
+#This function creates combination of 500 different parameters
 createParameters <- function(){
   lambda1 <- seq(2,500,by=2)
   lambda2 <- seq(2,500,by=2)
@@ -122,28 +127,17 @@ gillespie <- function(x1, x2, iteration, lamda1, beta1, lamda2, beta2, check_int
               "check_interval" = check_interval))
 }
 
+#create parameters
 parameters <- createParameters()
 
+
+#run simulation 500 times, with different parameters
 system.time(all_parm_result <- mclapply(parameters,function(x){
   gillespie(10,1000, 5e5, x$lambda1, x$beta1, x$lambda2, x$beta2, 100000)}
   ,mc.cores=7L))
 
-
-runSimulation <- function(parameters){
-    cl <- makeCluster( 4 )
-    clusterExport(cl, c("x1", "x2", "iteration", "gillespie", "parameters"))
-    rows <- 1:100
-    
-    results <- parLapply(cl = cl,  X = rows, fun =  function(X){
-        gillespie(x1, x2, iteration, parameters[X,1],parameters[X,2],parameters[X,3],parameters[X,4])
-    })
-    stopCluster(cl = cl)
-    return(results)
-}
-
-
-simulation_results <- runSimulation(parameters)
-
+##check if all simulations ran until the stationary state was reached.
+#also plots histograms of relative errors in flux balance relations
 check_simulation <- function(simulation_results){
     relative_error_1 <- relative_error_2 <- rep(0, 100)
     check_stationary <- rep(0, 100)
@@ -160,7 +154,7 @@ check_simulation <- function(simulation_results){
             check_stationary[i] <- TRUE
         }
     }
-    pdf("plot2A.pdf", width = 8, height = 6)
+    pdf("plot2B_1.pdf", width = 8, height = 6)
     par(mfrow=c(1, 2))
     plot(hist(relative_error_1), main = "Histogram of relative error in flux balance relation
          for x1")
@@ -177,7 +171,8 @@ check_simulation <- function(simulation_results){
     }
 }
 
-
+##checks how do the simulated and theoretical etas differ. Also plots out
+##simulated vs theoretical etas.
 check_accuracy <- function(simulation_results){
     eta11 <- eta12 <- eta22 <- rep(0, 100)
     eta11_analytic <- eta12_analytic <- eta22_analytic <- rep(0, 100)
@@ -202,7 +197,7 @@ check_accuracy <- function(simulation_results){
     dev11 <- abs(eta11 - eta11_analytic)/eta11_analytic
     dev12 <- abs(eta12 - eta12_analytic)/eta12_analytic
     dev22 <- abs(eta22 - eta22_analytic)/eta22_analytic
-    pdf("2Bplot.pdf", width = 8, height = 6)
+    pdf("plot2B_2.pdf", width = 8, height = 6)
     par(mfrow=c(1, 3))
     plot(hist(dev11), main="relative deviation of eta11")
     plot(hist(dev12), main="relative deviation of eta12")
@@ -229,8 +224,6 @@ theoretical protein noise")
 }
 
 noise_plot(observed_eta22, theoretical_eta22)
-
-
 
 noise_calculator <- function(dat1, dat2, parm){
     tau1 <- 1/parm["beta1"]
@@ -262,17 +255,7 @@ plot2D <- function(results, x_lim){
   dev.off()
 }
 
-
 plot2D(results)
-
-
-
-
-
-
-
-
-
 
 par(mfrow=c(1,1),mar=c(4,3,1,1))
 plot(results$time_keeper[900000:1000000], results$x2_storage[900000:1000000],type="l")
