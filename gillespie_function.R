@@ -13,22 +13,28 @@ beta2 <- 100
 lamda1 <- 100
 lamda2 <- 100
 
+# lambda1 <- seq(1,20,by=1)
+# lambda2 <- seq(0,500,by=50)[-1]
+# beta1 <- seq(1,20,by=1)
+# beta2 <- seq(2,30,by=2)
+
 createParameters <- function(){
-  lambda1 <- seq(10,100,by=10)
-  lambda2 <- 110 - lambda1 
-  beta1 <- seq(10,100,by=10)
-  beta2 <- 110 - beta1
-  parameter_matrix <- matrix(nrow = 100, ncol = 4,
-                             dimnames = list(1:100, c("lambda1", "lambda2", "beta1", "beta2")))
-  parameter_matrix[,"lambda1"] <- lambda1
-  parameter_matrix[,"lambda2"] <- lambda2
-  counter <- 1
-  for (row in seq(1,nrow(parameter_matrix), by =10)){
-    parameter_matrix[row:(row+9),"beta1"] <- beta1[counter]
-    parameter_matrix[row:(row+9),"beta2"] <- beta2[counter]
-    counter <- counter + 1
+  lambda1 <- seq(2,500,by=2)
+  lambda2 <- seq(2,500,by=2)
+  beta1 <- seq(2,500,by=2)
+  beta2 <- seq(2,500,by=2)
+  check_dup <- c(1,1)
+  while(any(table(check_dup)>1)){
+    parameter_matrix <- sapply(1:500,function(x){
+      c(sample(lambda1,1),sample(lambda2,1),sample(beta1,1),sample(beta2,1))
+    })
+    parameter_matrix <- t(parameter_matrix)
+    check_dup <- apply(parameter_matrix,1,function(x)paste(x,collapse = "_"))
   }
-  return(as.data.frame(parameter_matrix))
+  parameters <- as.data.frame(parameter_matrix)
+  colnames(parameters) <- c("lambda1","lambda2","beta1","beta2")
+  parameters_list <- split(parameters, seq(nrow(parameters)))
+  parameters_list
 }
 
 # Core function
@@ -83,8 +89,9 @@ gillespie <- function(x1, x2, iteration, lamda1, beta1, lamda2, beta2, check_int
       R_plus_2 <- mean(r_plus_2[check_range])
       R_minus_1 <- mean(r_minus_1[check_range])
       R_minus_2 <- mean(r_minus_2[check_range])
-      indi <- (all.equal(R_plus_1, R_minus_1, tolerance=1e-3)==TRUE)&&
-        (all.equal(R_plus_2, R_minus_2, tolerance=1e-3)==TRUE)
+      relative_R_err1 <- abs(R_plus_1-R_minus_1)/mean(c(R_plus_1, R_minus_1))
+      relative_R_err2 <- abs(R_plus_2-R_minus_2)/mean(c(R_plus_2, R_minus_2))
+      indi <- (relative_R_err1<0.01)&&(relative_R_err2<0.01)
     }
     
     #Store values
@@ -96,13 +103,11 @@ gillespie <- function(x1, x2, iteration, lamda1, beta1, lamda2, beta2, check_int
     r_minus_2[i] <- x2_death
     
     if (indi){
-      message("The random walk has reached stationarity at iteration: ", i)
       break
+      message("The random walk has reached stationarity at iteration: ", i)
     }
   }
-  if (i == iteration){
-     message("The random walk has not reached stationarity until the specified maximum number of iterations: ", iteration)
-  }
+  
   
   #Output result
   result <- cbind(time = time_keeper, x1 = x1_storage, x2 = x2_storage,
@@ -110,15 +115,18 @@ gillespie <- function(x1, x2, iteration, lamda1, beta1, lamda2, beta2, check_int
                   R_plus_x2 = r_plus_2, R_minus_x2 = r_minus_2)
   result <- head(result, i)
   epochs <- cbind(x1 = epoch_test_1, x2 = epoch_test_2)
+  gc()
+  print("done")
   return(list("parm" = c(beta1=beta1, beta2=beta2, lamda1=lamda1, lamda2=lamda2), 
               result = result, "epochs" = epochs, 
-              "check_interval" = check_interval, "Stationarity_reached"=indi))
+              "check_interval" = check_interval))
 }
 
 parameters <- createParameters()
-parameters_list <- split(parameters, seq(nrow(parameters)))
 
-test <- mclapply(parameters_list[1],function(x)gillespie(10,1000, 1e7, x$lambda1, x$beta1, x$lambda2, x$beta2, 10000))
+system.time(all_parm_result <- mclapply(parameters,function(x){
+  gillespie(10,1000, 5e5, x$lambda1, x$beta1, x$lambda2, x$beta2, 100000)}
+  ,mc.cores=7L))
 
 
 runSimulation <- function(parameters){
