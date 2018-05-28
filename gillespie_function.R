@@ -222,8 +222,10 @@ observed_eta22 <- D$observedEta$eta22
 theoretical_eta22 <- D$theoreticalEta$eta22
                  
 noise_plot <- function(observed, theoretical){
+    pdf("2Cplot.pdf", width = 8, height = 6)
     plot(observed, theoretical, type="l", xlab="Theoretical noise", ylab="Observed noise", main="Plot of observed
 theoretical protein noise")
+    dev.off()
 }
 
 noise_plot(observed_eta22, theoretical_eta22)
