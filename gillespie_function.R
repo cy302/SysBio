@@ -227,7 +227,26 @@ noise_calculator <- function(dat1, dat2, parm){
 results <- gillespie(x1, x2, iteration, beta1, parameters$beta1, parameters$lambda1, parameters$lambda2)
 
 
+plot2D <- function(results, x_lim){
+  pdf(width = 8, height = 6, "2D.pdf")
+  #plot only last epoch
+  indeces <- (length(results$x1)- 100000):length(results$x1) 
+  
+  par(mfrow = c(1,1), mar = c(5,5,5,5))
+  plot(results$time[indeces], results$x2[indeces], col = "red", 
+       xlim = x_lim, type = "l", ylab = "Protein molecules",
+       xlab = "Arbitrary time units",main = "Protein and mRNA levels over time")
+  par(new = TRUE)
+  plot(results$time[indeces], results$x1[indeces], col = "blue",
+       xlim = x_lim, type = "l",
+       axes = FALSE, xlab = NA, ylab = NA)
+  axis(side = 4)
+  mtext(side = 4, line = 3, "mRNA molecules")
+  dev.off()
+}
 
+
+plot2D(results)
 
 
 
