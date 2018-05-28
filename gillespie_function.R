@@ -193,8 +193,25 @@ check_accuracy <- function(simulation_results){
     plot(hist(dev11), main="relative deviation of eta11")
     plot(hist(dev12), main="relative deviation of eta12")
     plot(hist(dev22), main="relative deviation of eta22")
+    eta <- data.frame(cbind(eta11, eta12, eta22))
+    names(eta) <- c("eta11", "eta12", "eta22")
+    eta_analytic <- data.frame(cbind(eta11_analytic, eta12_analytic, eta22_analytic))
+    names(eta_analytic) <- c("eta11", "eta12", "eta22")
+    return(list("observedEta" = eta, "theoreticalEta" = eta_analytic))
 }
 
+
+## 2.C
+D <- check_accuracy(simulation_results)
+observed_eta22 <- D$observedEta$eta22
+theoretical_eta22 <- D$theoreticalEta$eta22
+                 
+noise_plot <- function(observed, theoretical){
+    plot(observed, theoretical, type="l", xlab="Theoretical noise", ylab="Observed noise", main="Plot of observed
+theoretical protein noise")
+}
+
+noise_plot(observed_eta22, theoretical_eta22)
 
 
 
