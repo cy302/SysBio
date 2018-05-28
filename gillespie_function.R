@@ -140,36 +140,30 @@ system.time(all_parm_result <- mclapply(parameters,function(x){
 ##check if all simulations ran until the stationary state was reached.
 #also plots histograms of relative errors in flux balance relations
 check_simulation <- function(simulation_results){
-    relative_error_1 <- relative_error_2 <- rep(0, 100)
-    check_stationary <- rep(0, 100)
-    for (i in 1:100){
-        result <- simulation_results[[i]]
-        epoch_size = result$epoch_size
-        relative_error_1[i] <- tail(result$epochs$x1, n=1)
-        relative_error_2[i] <- tail(result$epochs$x2, n=1)
-        r_plus_x1 <- mean(tail(result$flux$R_plus_x1), epoch_size)
-        r_minus_x1 <- mean(tail(result$flux$R_minus_x1), epoch_size)
-        r_plus_x2 <- mean(tail(result$flux$R_plus_x2), epoch_size)
-        r_minus_x2 <- mean(tail(result$flux$R_minus_x2), epoch_size)
-        if (abs(r_plus_x1-r_minus_x1) < 1e-3 && abs(r_plus_x2-r_minus_x2) < 1e-3){
-            check_stationary[i] <- TRUE
-        }
-    }
+
+    relative_diff_x1 <- sapply(simulation_results, function(x){
+        last_dat <- as.data.frame(tail(x$result,10000))
+        abs(mean(last_dat$R_plus_x1) - mean(last_dat$R_minus_x1))/
+            mean(c(mean(last_dat$R_plus_x1),mean(last_dat$R_minus_x1)))
+    })
+    
+    relative_diff_x2 <- sapply(simulation_results, function(x){
+        last_dat <- as.data.frame(tail(x$result,10000))
+        abs(mean(last_dat$R_plus_x2) - mean(last_dat$R_minus_x2))/
+            mean(c(mean(last_dat$R_plus_x2),mean(last_dat$R_minus_x2)))
+    })
+    
+    
+    reach_ss <- which(relative_diff_x1<0.01 & relative_diff_x2<0.01)
+    
     pdf("plot2B_1.pdf", width = 8, height = 6)
     par(mfrow=c(1, 2))
-    plot(hist(relative_error_1), main = "Histogram of relative error in flux balance relation
-         for x1")
-    plot(hist(relative_error_2), main = "Histogram of relative error in flux balance relation
-         for x2")
+    hist(relative_diff_x1, main = "Histogram of relative error in flux balance relation for x1")
+    hist(relative_diff_x2, main = "Histogram of relative error in flux balance relation for x2")
     par(mfrow=c(1, 1))
     dev.off()
-    if (all(check_stationary==1)){
-        cat(print("All simulations have ran long enough to describe stationarity"))
-    }
-    else{
-        message("Simulations that have not ran long enough to describe stationarity: ", 
-                which(check_stationary==0))
-    }
+    reach_ss
+    
 }
 
 ##checks how do the simulated and theoretical etas differ. Also plots out
@@ -264,6 +258,3 @@ par(new=FALSE)
 plot(results$time_keeper[900000:1000000], results$x1_storage[900000:1000000],type="l", col = "red")
 
 ##start with small beta1 and large beta2
-
-
-
