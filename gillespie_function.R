@@ -152,12 +152,14 @@ check_simulation <- function(simulation_results){
             check_stationary[i] <- TRUE
         }
     }
+    pdf("plot2A.pdf", width = 8, height = 6)
     par(mfrow=c(1, 2))
     plot(hist(relative_error_1), main = "Histogram of relative error in flux balance relation
          for x1")
     plot(hist(relative_error_2), main = "Histogram of relative error in flux balance relation
          for x2")
     par(mfrow=c(1, 1))
+    dev.off()
     if (all(check_stationary==1)){
         cat(print("All simulations have ran long enough to describe stationarity"))
     }
@@ -192,10 +194,12 @@ check_accuracy <- function(simulation_results){
     dev11 <- abs(eta11 - eta11_analytic)/eta11_analytic
     dev12 <- abs(eta12 - eta12_analytic)/eta12_analytic
     dev22 <- abs(eta22 - eta22_analytic)/eta22_analytic
+    pdf("2Bplot.pdf", width = 8, height = 6)
     par(mfrow=c(1, 3))
     plot(hist(dev11), main="relative deviation of eta11")
     plot(hist(dev12), main="relative deviation of eta12")
     plot(hist(dev22), main="relative deviation of eta22")
+    dev.off()
     eta <- data.frame(cbind(eta11, eta12, eta22))
     names(eta) <- c("eta11", "eta12", "eta22")
     eta_analytic <- data.frame(cbind(eta11_analytic, eta12_analytic, eta22_analytic))
