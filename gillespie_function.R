@@ -96,10 +96,13 @@ gillespie <- function(x1, x2, iteration, lamda1, beta1, lamda2, beta2, check_int
     r_minus_2[i] <- x2_death
     
     if (indi){
+      message("The random walk has reached stationarity at iteration: ", i)
       break
     }
   }
-  message("The random walk has reached stationarity at iteration: ", i)
+  if (i == iteration){
+     message("The random walk has not reached stationarity until the specified maximum number of iterations: ", iteration)
+  }
   
   #Output result
   result <- cbind(time = time_keeper, x1 = x1_storage, x2 = x2_storage,
@@ -109,7 +112,7 @@ gillespie <- function(x1, x2, iteration, lamda1, beta1, lamda2, beta2, check_int
   epochs <- cbind(x1 = epoch_test_1, x2 = epoch_test_2)
   return(list("parm" = c(beta1=beta1, beta2=beta2, lamda1=lamda1, lamda2=lamda2), 
               result = result, "epochs" = epochs, 
-              "check_interval" = check_interval))
+              "check_interval" = check_interval, "Stationarity_reached"=indi))
 }
 
 parameters <- createParameters()
