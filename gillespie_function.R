@@ -54,8 +54,8 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1, lambda2, beta2, check_i
     x2_storage[1] <- x2
     r_plus_1[1] <- lambda1
     r_minus_1[1] <- x1 * beta1
-    r_plus_2[1] <- x2 * beta2
-    r_minus_2[1] <- x1 * lambda2
+    r_plus_2[1] <- x1 * lambda2
+    r_minus_2[1] <- x2 * beta2
     
     epoch_test_1 <- epoch_test_2 <- c()
     indi <- FALSE
