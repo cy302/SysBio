@@ -263,3 +263,91 @@ par(new=FALSE)
 plot(results$time_keeper[900000:1000000], results$x1_storage[900000:1000000],type="l", col = "red")
 
 ##start with small beta1 and large beta2
+
+                       
+                       
+## part 2.E, include the autorepression function of x2 as the rate in the birth process of x1
+gillespie_updated <- function(x1, x2, iteration, lamda1, beta1, lamda2, beta2, check_interval, ar_func){
+  ## ar_func: autorepression function f(x2) as the birth rate of x1
+  
+  time_keeper <- x1_storage <- x2_storage <- rep(0, iteration)
+  r_plus_1 <- r_minus_1 <- r_plus_2 <- r_minus_2 <- rep(0, iteration)
+  
+  time_keeper[1] <- 0
+  x1_storage[1] <- x1
+  x2_storage[1] <- x2
+  r_plus_1[1] <- lamda1
+  r_minus_1[1] <- x1 * beta1
+  r_plus_2[1] <- x2 * beta2
+  r_minus_2[1] <- x1 * lamda2
+  
+  epoch_test_1 <- epoch_test_2 <- c()
+  indi <- FALSE
+  
+  #calculate rate of change in x1 and x2, both birth and death
+  for (i in 2:iteration){
+    x1_birth <- lamda1 * ar_func(x2)
+    x1_death <- x1 * beta1
+    x2_death <- x2 * beta2
+    x2_birth <- x1 * lamda2
+    
+    #total rate of change of x_1 and x_2
+    Tot_rate <- sum(x1_birth, x1_death, x2_birth, x2_death)
+    time_keeper[i] <- rexp(1,Tot_rate) + time_keeper[i-1]
+    
+    #Choose a event
+    u_event <- runif(1,0,1)
+    stick_frac <- c(0, x1_birth, x1_death, x2_birth, x2_death)
+    stick <- cumsum(stick_frac)/Tot_rate
+    u_event <- runif(1)
+    which_event <- tail(which(u_event > stick), 1) #Choose the falling region
+    
+    #Execute an event
+    if (which_event == 1)x1 <- x1 + 1  #x1_birth
+    if (which_event == 2)x1 <- x1 - 1  #x1_death
+    if (which_event == 3)x2 <- x2 + 1  #x2_birth
+    if (which_event == 4)x2 <- x2 - 1  #x2_death
+    
+    #Check stationery state
+    if (i %% check_interval == 0){
+      check_range <- (i-check_interval+1):i
+      last_x1 <- x1_storage[check_range]
+      last_x2 <- x2_storage[check_range]
+      epoch_test_1 <- c(epoch_test_1, abs((lamda1/mean(last_x1)-beta1)/beta1))
+      epoch_test_2 <- c(epoch_test_2, abs(mean(last_x1)/mean(last_x2)*lamda2-beta2)/beta2)
+      R_plus_1 <- mean(r_plus_1[check_range])
+      R_plus_2 <- mean(r_plus_2[check_range])
+      R_minus_1 <- mean(r_minus_1[check_range])
+      R_minus_2 <- mean(r_minus_2[check_range])
+      relative_R_err1 <- abs(R_plus_1-R_minus_1)/mean(c(R_plus_1, R_minus_1))
+      relative_R_err2 <- abs(R_plus_2-R_minus_2)/mean(c(R_plus_2, R_minus_2))
+      indi <- (relative_R_err1<0.01)&&(relative_R_err2<0.01)
+    }
+    
+    #Store values
+    x1_storage[i] <- x1
+    x2_storage[i] <- x2
+    r_plus_1[i] <- x1_birth
+    r_minus_1[i] <- x1_death
+    r_plus_2[i] <- x2_birth
+    r_minus_2[i] <- x2_death
+    
+    if (indi){
+      break
+      message("The random walk has reached stationarity at iteration: ", i)
+    }
+  }
+  
+  
+  #Output result
+  result <- cbind(time = time_keeper, x1 = x1_storage, x2 = x2_storage,
+                  R_plus_x1 = r_plus_1, R_minus_x1 = r_minus_1,
+                  R_plus_x2 = r_plus_2, R_minus_x2 = r_minus_2)
+  result <- head(result, i)
+  epochs <- cbind(x1 = epoch_test_1, x2 = epoch_test_2)
+  gc()
+  print("done")
+  return(list("parm" = c(beta1=beta1, beta2=beta2, lamda1=lamda1, lamda2=lamda2), 
+              result = result, "epochs" = epochs, 
+              "check_interval" = check_interval))
+}
