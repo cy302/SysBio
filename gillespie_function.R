@@ -80,10 +80,11 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
     #   message("The random walk has reached stationarity at iteration: ", i)
     # }
   }
+
   time_duration[1] <- time_keeper[1]
   time_duration[2:iteration] <- tail(time_keeper, iteration-1) - head(time_keeper, iteration-1)
-  x1_average <- weighted.mean(x=tail(x1_storage, check_interval), w=tail(time_duration, check_interval))
-  x2_average <- weighted.mean(x=tail(x2_storage, check_interval), w=tail(time_duration, check_interval))
+  x1_average <- weighted.mean(x=x1_storage, w=time_duration)
+  x2_average <- weighted.mean(x=x2_storage, w=time_duration)
   
   R_plus_1 <- lambda1 * ar_func(x2_average)
   R_minus_1 <- beta1 * x1_average
