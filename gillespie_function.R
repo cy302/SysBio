@@ -96,8 +96,10 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
   R_plus_2 <- weighted.mean(x=tail(r_plus_2, check_interval), w=tail(time_duration, check_interval))
   R_minus_2 <- weighted.mean(x=tail(r_minus_2, check_interval), w=tail(time_duration, check_interval))
   
-  indi <- (abs(R_plus_1-R_minus_1)/mean(c(R_plus_1, R_minus_1)<0.01)&&
-           (abs(R_plus_2-R_minus_2)/mean(c(R_plus_2, R_minus_2)<0.01)
+  relative_R1_diff <- abs(R_plus_1-R_minus_1)/mean(c(R_plus_1, R_minus_1)
+  relative_R2_diff <- (abs(R_plus_2-R_minus_2)/mean(c(R_plus_2, R_minus_2)
+  
+  indi <- (relative_R1_diff && relative_R2_diff<0.01)
   
   
   #Output result
@@ -111,7 +113,8 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
   return(list("parm" = c(beta1=beta1, beta2=beta2, 
                          lambda1=lambda1, lambda2=lambda2), 
               result = result, "epochs" = epochs, 
-              "check_interval" = check_interval, "stationary_reached"=indi))
+              "check_interval" = check_interval, "stationary_reached"=indi, 
+              "Relative_diff"=c(relative_R1_diff, relative_R2_diff))
 }
 
 #create parameters
