@@ -33,7 +33,7 @@ createParameters <- function(l1_min, l1_max, l2_min, l2_max,
 
 # Core function
 gillespie <- function(x1, x2, iteration, lambda1, beta1,
-                      lambda2, beta2, check_interval, ar_func=function(x){1}){
+                      lambda2, beta2, check_interval=100000, ar_func=function(x){1}){
   
   ## ar_func: autorepression function of x2, the birth rate of x1
   time_keeper <- x1_storage <- x2_storage <- rep(0, iteration)
@@ -75,22 +75,6 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
     if (which_event == 3)x2 <- x2 + 1  #x2_birth
     if (which_event == 4)x2 <- x2 - 1  #x2_death
     
-    #Check stationery state
-    # if (i %% check_interval == 0){
-    #   check_range <- (i-check_interval+1):i
-    #   last_x1 <- x1_storage[check_range]
-    #   last_x2 <- x2_storage[check_range]
-    #   epoch_test_1 <- c(epoch_test_1, abs((lambda1/mean(last_x1)-beta1)/beta1))
-    #   epoch_test_2 <- c(epoch_test_2, abs(mean(last_x1)/mean(last_x2)*lambda2-beta2)/beta2)
-    #   # R_plus_1 <- mean(r_plus_1[check_range])
-    #   # R_plus_2 <- mean(r_plus_2[check_range])
-    #   # R_minus_1 <- mean(r_minus_1[check_range])
-    #   # R_minus_2 <- mean(r_minus_2[check_range])
-    #   # relative_R_err1 <- abs(R_plus_1-R_minus_1)/mean(c(R_plus_1, R_minus_1))
-    #   # relative_R_err2 <- abs(R_plus_2-R_minus_2)/mean(c(R_plus_2, R_minus_2))
-    #   # indi <- (relative_R_err1<0.01)&&(relative_R_err2<0.01)
-    #   indi <- (tail(epoch_test_1,1)<0.01 & tail(epoch_test_2,1)<0.01)
-    # }
     
     #Store values
     x1_storage[i] <- x1
@@ -106,6 +90,14 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
     # }
   }
   
+  time_duration <- tail(time_keeper, iteration-1) - head(time_keeper, iteration)
+  R_plus_1 <- weighted.mean(x=tail(r_plus_1, check_interval), w=tail(time_duration, check_interval))
+  R_minus_1 <- weighted.mean(x=tail(r_minus_1, check_interval), w=tail(time_duration, check_interval))
+  R_plus_2 <- weighted.mean(x=tail(r_plus_2, check_interval), w=tail(time_duration, check_interval))
+  R_minus_2 <- weighted.mean(x=tail(r_minus_2, check_interval), w=tail(time_duration, check_interval))
+  
+  indi <- (abs(R_plus_1-R_minus_1)/mean(R_plus_1+R_minus_1)<0.01)&&(abs(R_plus_2-R_minus_2)/mean(R_plus_2+R_minus_2)<0.01)
+  
   
   #Output result
   result <- cbind.data.frame(time = time_keeper, x1 = x1_storage, x2 = x2_storage,
@@ -118,7 +110,7 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
   return(list("parm" = c(beta1=beta1, beta2=beta2, 
                          lambda1=lambda1, lambda2=lambda2), 
               result = result, "epochs" = epochs, 
-              "check_interval" = check_interval))
+              "check_interval" = check_interval, "stationary_reached"=indi))
 }
 
 #create parameters
