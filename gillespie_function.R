@@ -114,7 +114,7 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
                          lambda1=lambda1, lambda2=lambda2), 
               result = result, "epochs" = epochs, 
               "check_interval" = check_interval, "stationary_reached"=indi, 
-              "Relative_diff"=c(relative_R1_diff, relative_R2_diff))
+              "Relative_diff"=c(relative_R1_diff, relative_R2_diff)))
 }
 
 #create parameters
