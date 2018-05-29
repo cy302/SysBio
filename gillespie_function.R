@@ -80,10 +80,11 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
     #   message("The random walk has reached stationarity at iteration: ", i)
     # }
   }
-  
-  time_duration <- tail(time_keeper, iteration-1) - head(time_keeper, iteration)
-  x1_average <- weighted.mean(x=tail(x1_storage, iteration-1), w=time_duration)
-  x2_average <- weighted.mean(x=tail(x2_storage, iteration-1), w=time_duration)
+
+  time_duration[1] <- time_keeper[1]
+  time_duration[2:iteration] <- tail(time_keeper, iteration-1) - head(time_keeper, iteration-1)
+  x1_average <- weighted.mean(x=x1_storage, w=time_duration)
+  x2_average <- weighted.mean(x=x2_storage, w=time_duration)
   
   R_plus_1 <- lambda1 * ar_func(x2_average)
   R_minus_1 <- beta1 * x1_average
@@ -97,18 +98,17 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
   
   
   #Output result
-  result <- cbind.data.frame(time = time_keeper, x1 = x1_storage, x2 = x2_storage,
-                             R_plus_x1 = r_plus_1, R_minus_x1 = r_minus_1,
-                             R_plus_x2 = r_plus_2, R_minus_x2 = r_minus_2)
-  result <- head(result, i)
-  epochs <- cbind.data.frame(x1 = epoch_test_1, x2 = epoch_test_2)
+  result <- cbind.data.frame(time = time_keeper, x1 = x1_storage, x2 = x2_storage)
+  # result <- head(result, i)
+  # epochs <- cbind.data.frame(x1 = epoch_test_1, x2 = epoch_test_2)
   gc()
   print("done")
-  return(list("parm" = c(beta1=beta1, beta2=beta2, 
-                         lambda1=lambda1, lambda2=lambda2), 
-              result = result, "epochs" = epochs, 
-              "check_interval" = check_interval, "stationary_reached"=indi, 
-              "Relative_diff"=c(relative_R1_diff, relative_R2_diff)))
+  return(list("parm" = c(beta1=beta1, beta2=beta2, lambda1=lambda1, lambda2=lambda2),
+              result = result,
+              "check_interval" = check_interval,
+              "stationary_reached"=indi, 
+              "Relative_diff"=c(relative_R1_diff, relative_R2_diff),
+              "R" = c(R_plus_1, R_minus_1, R_plus_2, R_minus_2)))
 }
 
 #create parameters
