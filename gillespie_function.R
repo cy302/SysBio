@@ -97,18 +97,15 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
   
   
   #Output result
-  result <- cbind.data.frame(time = time_keeper, x1 = x1_storage, x2 = x2_storage,
-                             R_plus_x1 = r_plus_1, R_minus_x1 = r_minus_1,
-                             R_plus_x2 = r_plus_2, R_minus_x2 = r_minus_2)
-  result <- head(result, i)
-  epochs <- cbind.data.frame(x1 = epoch_test_1, x2 = epoch_test_2)
+  result <- cbind.data.frame(time = time_keeper, x1 = x1_storage, x2 = x2_storage)
+  # result <- head(result, i)
+  # epochs <- cbind.data.frame(x1 = epoch_test_1, x2 = epoch_test_2)
   gc()
   print("done")
   return(list("parm" = c(beta1=beta1, beta2=beta2, 
-                         lambda1=lambda1, lambda2=lambda2), 
-              result = result, "epochs" = epochs, 
-              "check_interval" = check_interval, "stationary_reached"=indi, 
-              "Relative_diff"=c(relative_R1_diff, relative_R2_diff)))
+                         lambda1=lambda1, lambda2=lambda2), result = result,
+                         "check_interval" = check_interval, "stationary_reached"=indi, 
+                         "Relative_diff"=c(relative_R1_diff, relative_R2_diff)))
 }
 
 #create parameters
