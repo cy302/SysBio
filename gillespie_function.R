@@ -82,8 +82,8 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
   }
   
   time_duration <- tail(time_keeper, iteration-1) - head(time_keeper, iteration)
-  x1_average <- weighted.mean(x=tail(x1_storage, check_interval), w=tail(time_duration, check_interval))
-  x2_average <- weighted.mean(x=tail(x2_storage, check_interval), w=tail(time_duration, check_interval))
+  x1_average <- weighted.mean(x=head(x1_storage, iteration-1), w=time_duration)
+  x2_average <- weighted.mean(x=head(x2_storage, iteration-1), w=time_duration)
   
   R_plus_1 <- lambda1 * ar_func(x2_average)
   R_minus_1 <- beta1 * x1_average
