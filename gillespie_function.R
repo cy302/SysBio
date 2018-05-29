@@ -37,15 +37,10 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
   
   ## ar_func: autorepression function of x2, the birth rate of x1
   time_keeper <- x1_storage <- x2_storage <- rep(0, iteration)
-  r_plus_1 <- r_minus_1 <- r_plus_2 <- r_minus_2 <- rep(0, iteration)
   
   time_keeper[1] <- 0
   x1_storage[1] <- x1
   x2_storage[1] <- x2
-  r_plus_1[1] <- lambda1
-  r_minus_1[1] <- x1 * beta1
-  r_plus_2[1] <- x1 * lambda2
-  r_minus_2[1] <- x2 * beta2
   
   epoch_test_1 <- epoch_test_2 <- c()
   indi <- FALSE
@@ -79,10 +74,6 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
     #Store values
     x1_storage[i] <- x1
     x2_storage[i] <- x2
-    r_plus_1[i] <- x1_birth
-    r_minus_1[i] <- x1_death
-    r_plus_2[i] <- x2_birth
-    r_minus_2[i] <- x2_death
     
     # if (indi){
     #   break
@@ -91,10 +82,13 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
   }
   
   time_duration <- tail(time_keeper, iteration-1) - head(time_keeper, iteration)
-  R_plus_1 <- weighted.mean(x=tail(r_plus_1, check_interval), w=tail(time_duration, check_interval))
-  R_minus_1 <- weighted.mean(x=tail(r_minus_1, check_interval), w=tail(time_duration, check_interval))
-  R_plus_2 <- weighted.mean(x=tail(r_plus_2, check_interval), w=tail(time_duration, check_interval))
-  R_minus_2 <- weighted.mean(x=tail(r_minus_2, check_interval), w=tail(time_duration, check_interval))
+  x1_average <- weighted.mean(x=tail(x1_storage, check_interval), w=tail(time_duration, check_interval))
+  x2_average <- weighted.mean(x=tail(x2_storage, check_interval), w=tail(time_duration, check_interval))
+  
+  R_plus_1 <- lambda1 * ar_func(x2_average)
+  R_minus_1 <- beta1 * x1_average
+  R_plus_2 <- lambda2 * x1_average
+  R_minus_2 <- beta2 * x2_average
   
   relative_R1_diff <- abs(R_plus_1-R_minus_1)/mean(c(R_plus_1, R_minus_1))
   relative_R2_diff <- abs(R_plus_2-R_minus_2)/mean(c(R_plus_2, R_minus_2))
