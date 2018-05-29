@@ -80,7 +80,7 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
     #   message("The random walk has reached stationarity at iteration: ", i)
     # }
   }
-
+  time_duration <- rep(0, iteration)
   time_duration[1] <- time_keeper[1]
   time_duration[2:iteration] <- tail(time_keeper, iteration-1) - head(time_keeper, iteration-1)
   x1_average <- weighted.mean(x=x1_storage, w=time_duration)
@@ -115,7 +115,7 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
 # parameters1 <- createParameters(50, 100, 300, 500, 2, 10, 30, 50, number=40) #extrinsic dominance
 # parameters2 <- createParameters(50, 100, 300, 500, 2, 30, 2, 30, number=40) #similar
 # parameters3 <- createParameters(50, 100, 50, 100, 10, 20, 50, 80, number=40) #intrinsic dominance
-parameters <- createParameters(2,200,2,200,2,200,2,200, number=250)
+parameters <- createParameters(200,2000,200,2000,2,200,2,200, number=100)
 #parameters <- c(parameters1,parameters2,parameters3)
 #names(parameters) <- 1:500
 
