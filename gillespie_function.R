@@ -33,24 +33,29 @@ getMean <- function(params){
 # Core function
 gillespie <- function(x1, x2, iteration, lambda1, beta1,
                       lambda2, beta2, check_interval=100000, ar_func=function(x){1}){
-  
+  # lambda1 <- parameters1[[1]]$lambda1
+  # beta1 <- parameters1[[1]]$beta1
+  # lambda2 <- parameters1[[1]]$lambda2
+  # beta2 <- parameters1[[1]]$beta2
+  # iteration <-5e4
+  # x1 <- 100
+  # x2 <- 100
+  # check_interval <- 10000
+  # 
   ## ar_func: autorepression function of x2, the birth rate of x1
   time_keeper <- x1_storage <- x2_storage <- rep(0, iteration)
-  
   time_keeper[1] <- 0
   x1_storage[1] <- x1
   x2_storage[1] <- x2
-  
-  epoch_test_1 <- epoch_test_2 <- c()
   indi <- FALSE
-  
+  stationary_track <- c()
+  #ar_func <- function(x)1
   #calculate rate of change in x1 and x2, both birth and death
   for (i in 2:iteration){
     x1_birth <- lambda1 * ar_func(x2)
     x1_death <- x1 * beta1
     x2_birth <- x1 * lambda2
     x2_death <- x2 * beta2
-
     
     #total rate of change of x_1 and x_2
     Tot_rate <- sum(x1_birth, x1_death, x2_birth, x2_death)
@@ -69,46 +74,43 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
     if (which_event == 3)x2 <- x2 + 1  #x2_birth
     if (which_event == 4)x2 <- x2 - 1  #x2_death
     
-    
     #Store values
     x1_storage[i] <- x1
     x2_storage[i] <- x2
     
-    # if (indi){
-    #   break
-    #   message("The random walk has reached stationarity at iteration: ", i)
-    # }
+    #Explicitly check simulation
+    
+    if(i %% check_interval == 0){
+      check_range <- (i-check_interval+1):i
+      time_duration <- diff(time_keeper[c(check_range,i)])
+      x1_average <- weighted.mean(x=x1_storage[check_range], w=time_duration)
+      x2_average <- weighted.mean(x=x2_storage[check_range], w=time_duration)
+      R_plus_1 <- lambda1 * ar_func(x2_average)
+      R_minus_1 <- beta1 * x1_average
+      R_plus_2 <- lambda2 * x1_average
+      R_minus_2 <- beta2 * x2_average
+      
+      relative_R1_diff <- abs(R_plus_1-R_minus_1)/mean(c(R_plus_1, R_minus_1))
+      relative_R2_diff <- abs(R_plus_2-R_minus_2)/mean(c(R_plus_2, R_minus_2))
+      indi <- (relative_R1_diff && relative_R2_diff<0.01)
+      stationary_track <- c(stationary_track, indi)
+    }
+    
   }
-  time_duration <- rep(0, iteration)
-  time_duration[1] <- time_keeper[1]
-  time_duration[2:iteration] <- tail(time_keeper, iteration-1) - head(time_keeper, iteration-1)
-  x1_average <- weighted.mean(x=x1_storage, w=time_duration)
-  x2_average <- weighted.mean(x=x2_storage, w=time_duration)
-  
-  R_plus_1 <- lambda1 * ar_func(x2_average)
-  R_minus_1 <- beta1 * x1_average
-  R_plus_2 <- lambda2 * x1_average
-  R_minus_2 <- beta2 * x2_average
-  
-  relative_R1_diff <- abs(R_plus_1-R_minus_1)/mean(c(R_plus_1, R_minus_1))
-  relative_R2_diff <- abs(R_plus_2-R_minus_2)/mean(c(R_plus_2, R_minus_2))
-  
-  indi <- (relative_R1_diff && relative_R2_diff<0.01)
   
   
   #Output result
   result <- cbind.data.frame(time = time_keeper, x1 = x1_storage, x2 = x2_storage)
-  # result <- head(result, i)
-  # epochs <- cbind.data.frame(x1 = epoch_test_1, x2 = epoch_test_2)
-  gc()
+  
   print("done")
   return(list("parm" = c(beta1=beta1, beta2=beta2, lambda1=lambda1, lambda2=lambda2),
               result = result,
               "check_interval" = check_interval,
-              "stationary_reached"=indi, 
+              "stationary_reached" = stationary_track, 
               "Relative_diff"=c(relative_R1_diff, relative_R2_diff),
               "R" = c(R_plus_1, R_minus_1, R_plus_2, R_minus_2),
               "means" = c(x1_average, x2_average)))
+  gc()
 }
 
 #create parameters
