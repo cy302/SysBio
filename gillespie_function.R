@@ -162,7 +162,6 @@ plot_col[coverged_loc] <- "red"
 
 pdf("/home/skllr-b/Desktop/Temp/sba1/noise_plot_2B.pdf",width=7,height=7)
 plot(log10(all_noise),col=plot_col,
-     ylim=c(-2.5,2),xlim=c(-0.5,0.5),
      ylab="log10(Intrinsic noise)",
      xlab="log10(Extrinsic noise)",pch=19,cex=0.5)
 lines(c(-1000,1000),c(-1000,1000))
@@ -170,7 +169,7 @@ legend("topleft", legend=c("Dominated by intrinsic noise",
                            "Dominated by extrinsic noise",
                            "In between",
                            "Reached stationery state"),
-       col=c("black","green","blue","red"),pch=19)
+       col=c("green","blue","black","red"),pch=19)
 dev.off()
 
 
