@@ -135,7 +135,7 @@ noise_calculator <- function(dat1, dat2, parm){
   tau1 <- 1/parm["beta1"]
   tau2 <- 1/parm["beta2"]
   mRNA_noise <- 1/mean(dat1)
-  ex_noise <- mRNA_noise + tau1/(tau1+tau2)
+  ex_noise <- mRNA_noise * tau1/(tau1+tau2)
   in_noise <- 1/mean(dat2)
   names(ex_noise) <- NULL
   return(c("Extrinsic" = ex_noise, "Intrinsic" = in_noise))
