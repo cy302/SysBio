@@ -108,14 +108,15 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
               "check_interval" = check_interval,
               "stationary_reached"=indi, 
               "Relative_diff"=c(relative_R1_diff, relative_R2_diff),
-              "R" = c(R_plus_1, R_minus_1, R_plus_2, R_minus_2)))
+              "R" = c(R_plus_1, R_minus_1, R_plus_2, R_minus_2),
+              "means" = c(x1_average, x2_average)))
 }
 
 #create parameters
 # parameters1 <- createParameters(50, 100, 300, 500, 2, 10, 30, 50, number=40) #extrinsic dominance
 # parameters2 <- createParameters(50, 100, 300, 500, 2, 30, 2, 30, number=40) #similar
 # parameters3 <- createParameters(50, 100, 50, 100, 10, 20, 50, 80, number=40) #intrinsic dominance
-parameters <- createParameters(200,2000,200,2000,2,200,2,200, number=100)
+parameters <- createParameters(1000,1000,500,500,200,200,1,400, number=100)
 #parameters <- c(parameters1,parameters2,parameters3)
 #names(parameters) <- 1:500
 
@@ -123,29 +124,29 @@ parameters <- createParameters(200,2000,200,2000,2,200,2,200, number=100)
 
 #run simulation 500 times, with different parameters
 system.time(all_parm_result <- mclapply(parameters,function(x){
-  gillespie(100,100, 5e5, x$lambda1, x$beta1, x$lambda2, x$beta2, 50000)}
-  ,mc.cores=7L))
+  gillespie(100,100, 5e6, x$lambda1, x$beta1, x$lambda2, x$beta2, 5000000)}
+  ,mc.cores=32L))
 
 tot_iteration <- nrow(all_parm_result[[1]]$result)
 plot(all_parm_result[[1]]$result$time[seq(1,tot_iteration,len=10000)],
      all_parm_result[[1]]$result$x2[seq(1,tot_iteration,len=10000)],type="l",ylim=c(0,30))
 
-tail(all_parm_result[[1]]$result$x1,10000)
-noise_calculator <- function(dat1, dat2, parm){
+
+noise_calculator <- function(x1_average, x2_average, parm){
   tau1 <- 1/parm["beta1"]
   tau2 <- 1/parm["beta2"]
-  mRNA_noise <- 1/mean(dat1)
+  mRNA_noise <- 1/x1_average
   ex_noise <- mRNA_noise * tau1/(tau1+tau2)
-  in_noise <- 1/mean(dat2)
+  in_noise <- 1/x2_average
   names(ex_noise) <- NULL
   return(c("Extrinsic" = ex_noise, "Intrinsic" = in_noise))
 }
 
 all_noise <- lapply(all_parm_result,function(x){
-  df_length <- nrow(x$result)
-  check_range <- (df_length - x$check_interval):df_length
-  check_data <- x$result[check_range,]
-  noise_calculator(check_data$x1,check_data$x2,x$parm)
+  
+  
+  check_data <- x$means
+  noise_calculator(check_data[1],check_data[2],x$parm)
 })
 
 all_noise <- do.call(rbind.data.frame,all_noise)
@@ -157,7 +158,7 @@ plot_col[all_noise$Extrinsic/all_noise$Intrinsic > 1.5] <- "blue"
 plot_col[all_noise$Intrinsic/all_noise$Extrinsic > 1.5] <- "green"
 
 R_diff <- check_simulation(all_parm_result)
-coverged_loc <- which(R_diff[[1]]<0.01&R_diff[[2]]<0.01)
+coverged_loc <- sapply(all_parm_result, function(x)x$stationary_reached)
 plot_col[coverged_loc] <- "red"
 
 pdf("/home/skllr-b/Desktop/Temp/sba1/noise_plot_2B.pdf",width=7,height=7)
