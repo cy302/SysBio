@@ -92,7 +92,7 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
       
       relative_R1_diff <- abs(R_plus_1-R_minus_1)/mean(c(R_plus_1, R_minus_1))
       relative_R2_diff <- abs(R_plus_2-R_minus_2)/mean(c(R_plus_2, R_minus_2))
-      indi <- (relative_R1_diff && relative_R2_diff<0.01)
+      indi <- (relative_R1_diff < 0.01 && relative_R2_diff<0.01)
       stationary_track <- c(stationary_track, indi)
     }
     
