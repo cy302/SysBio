@@ -11,24 +11,23 @@ set.seed(2018)
 # beta2 <- seq(2,30,by=2)
 
 #This function creates combination of 500 different parameters
-createParameters <- function(l1_min, l1_max, l2_min, l2_max,
-                             b1_min,b1_max, b2_min, b2_max, number=40){
-  lambda1 <- seq(l1_min,l1_max,by=2)
-  lambda2 <- seq(l2_min,l2_max,by=2)
-  beta1 <- seq(b1_min,b1_max,by=2)
-  beta2 <- seq(b2_min,b2_max,by=2)
-  check_dup <- c(1,1)
-  while(any(table(check_dup)>1)){
-    parameter_matrix <- sapply(1:number,function(x){
-      c(sample(lambda1,1),sample(lambda2,1),sample(beta1,1),sample(beta2,1))
-    })
-    parameter_matrix <- t(parameter_matrix)
-    check_dup <- apply(parameter_matrix,1,function(x)paste(x,collapse = "_"))
-  }
+createParameters <- function(l1, l2, b1, b2_min, b2_max, number=40){
+  lambda1 <- rep(l1, number)
+  lambda2 <- rep(l2, number)
+  beta1 <- rep(b1, number)
+  beta2 <- sample(x = b2_min:b2_max, size = number, replace = FALSE)
+  parameter_matrix <- cbind(lambda1,lambda2,beta1,beta2)
   parameters <- as.data.frame(parameter_matrix)
   colnames(parameters) <- c("lambda1","lambda2","beta1","beta2")
   parameters_list <- split(parameters, seq(nrow(parameters)))
   parameters_list
+}
+
+getMean <- function(params){
+  ##<x1> is always 5, based on parameters
+  mean_x1 <- unname(unlist(params[1]/params[3]))
+  mean_x2 <- unname(unlist((mean_x1*params[2])/params[4]))
+  return(floor(c("x1"= mean_x1, "x2" = mean_x2)))
 }
 
 # Core function
@@ -116,7 +115,7 @@ gillespie <- function(x1, x2, iteration, lambda1, beta1,
 # parameters1 <- createParameters(50, 100, 300, 500, 2, 10, 30, 50, number=40) #extrinsic dominance
 # parameters2 <- createParameters(50, 100, 300, 500, 2, 30, 2, 30, number=40) #similar
 # parameters3 <- createParameters(50, 100, 50, 100, 10, 20, 50, 80, number=40) #intrinsic dominance
-parameters <- createParameters(1000,1000,500,500,200,200,1,400, number=100)
+parameters <- createParameters(2000,1000,1000,1,1000, number=100)
 #parameters <- c(parameters1,parameters2,parameters3)
 #names(parameters) <- 1:500
 
@@ -124,8 +123,8 @@ parameters <- createParameters(1000,1000,500,500,200,200,1,400, number=100)
 
 #run simulation 500 times, with different parameters
 system.time(all_parm_result <- mclapply(parameters,function(x){
-  gillespie(100,100, 5e6, x$lambda1, x$beta1, x$lambda2, x$beta2, 5000000)}
-  ,mc.cores=32L))
+  gillespie(getMean(x)[1],getMean(x)[2], 5e5, x$lambda1, x$beta1, x$lambda2, x$beta2, 500000)}
+  ,mc.cores=34L))
 
 tot_iteration <- nrow(all_parm_result[[1]]$result)
 plot(all_parm_result[[1]]$result$time[seq(1,tot_iteration,len=10000)],
