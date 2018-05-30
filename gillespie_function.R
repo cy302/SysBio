@@ -4,12 +4,6 @@
 library(parallel)
 set.seed(2018)
 
-#initial x1 and x2
-# lambda1 <- seq(1,20,by=1)
-# lambda2 <- seq(0,500,by=50)[-1]
-# beta1 <- seq(1,20,by=1)
-# beta2 <- seq(2,30,by=2)
-
 #This function creates combination of 500 different parameters
 createParameters <- function(l1_min, l1_max, l2_min, l2_max,
                              b1_min,b1_max, b2_min, b2_max, number=40){
